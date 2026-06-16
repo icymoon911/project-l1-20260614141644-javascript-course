@@ -14,7 +14,7 @@ class Car {
 
   // getters & setters
   getCurrentSpeed() {
-    return currentSpeed
+    return this.currentSpeed
   }
 
   zeroToSixty() {

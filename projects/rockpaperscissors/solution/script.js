@@ -10,6 +10,9 @@
     👉 Higher order Function (Math.random())
 */
 
+// Independent score tracker — not tied to DOM innerText
+let playerScoreTotal = 0
+
 // ** getComputerChoice randomly selects between `rock` `paper` `scissors` and returns that string **
 // getComputerChoice() 👉 'Rock'
 // getComputerChoice() 👉 'Scissors'
@@ -25,7 +28,7 @@ function getComputerChoice() {
 // human draws - getResult('Rock', 'Rock') 👉 0
 function getResult(playerChoice, computerChoice) {
   // return the result of score based on if you won, drew, or lost
-  
+
   let score;
 
   // All situations where human draws, set `score` to 0
@@ -57,7 +60,7 @@ function showResult(score, playerChoice, computerChoice) {
   // Hint: on a score of -1
   // You should do result.innerText = 'You Lose!'
   // Don't forget to grab the div with the 'result' id!
-  
+
   let result = document.getElementById('result')
   switch (score) {
     case -1:
@@ -73,8 +76,11 @@ function showResult(score, playerChoice, computerChoice) {
 
   let playerScore = document.getElementById('player-score')
   let hands = document.getElementById('hands')
-  playerScore.innerText = `${Number(playerScore.innerText) + score}`
-    hands.innerText = `👱 ${playerChoice} vs 🤖 ${computerChoice}`
+
+  // Use the independent variable to track score — never rely on innerText
+  playerScoreTotal = Math.max(0, playerScoreTotal + score)
+  playerScore.innerText = `${playerScoreTotal}`
+  hands.innerText = `👱 ${playerChoice} vs 🤖 ${computerChoice}`
 }
 
 // ** Calculate who won and show it on the screen **
@@ -90,7 +96,7 @@ function playGame() {
   let rpsButtons = document.querySelectorAll('.rpsButton')
 
   // * Adds an on click event listener to each RPS button and every time you click it, it calls the onClickRPS function with the RPS button that was last clicked *
-  
+
   // 1. loop through the buttons using a forEach loop
   // 2. Add a 'click' event listener to each button
   // 3. Call the onClickRPS function every time someone clicks
@@ -105,14 +111,19 @@ function playGame() {
   endGameButton.onclick = () => endGame()
 }
 
-// ** endGame function clears all the text on the DOM **
+// ** endGame function clears the text on the DOM **
 function endGame() {
   let playerScore = document.getElementById('player-score')
   let hands = document.getElementById('hands')
   let result = document.getElementById('result')
-  playerScore.innerText = ''
-  hands.innerText = ''
-  result.innerText = ''
+
+  // Guard: safely clear display text regardless of current state
+  if (playerScore) playerScore.innerText = ''
+  if (hands) hands.innerText = ''
+  if (result) result.innerText = ''
+
+  // Note: playerScoreTotal is intentionally NOT reset here
+  // so that score continues to accumulate across endGame calls
 }
 
 playGame()

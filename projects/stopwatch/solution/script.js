@@ -7,6 +7,17 @@ const buttonStop = document.getElementById('button-stop')
 const buttonReset = document.getElementById('button-reset')
 let interval
 
+const formatTens = (value) => {
+  if (value <= 9) return `0${value}`
+  if (value > 99) return `99`
+  return `${value}`
+}
+
+const formatSeconds = (value) => {
+  if (value <= 9) return `0${value}`
+  if (value > 99) return `99`
+  return `${value}`
+}
 
 buttonStart.onclick = () => {
   clearInterval(interval)
@@ -21,30 +32,18 @@ buttonReset.onclick = () => {
   clearInterval(interval)
   tens = 0
   seconds = 0
-  displayTens.innerHTML = `0${tens}`
-  displaySeconds.innerHTML = `0${seconds}`
+  displayTens.innerHTML = formatTens(tens)
+  displaySeconds.innerHTML = formatSeconds(seconds)
 }
 
 const timer = () => {
   tens++
 
-  if (Number(tens) <= 9) {
-    displayTens.innerHTML = `0${tens}`
-  }
-
-  if (Number(tens) > 9) {
-    displayTens.innerHTML = tens
-  }
-
-  if (Number(tens) > 99) {
-    console.log('seconds')
+  if (tens > 99) {
     seconds++
-    displaySeconds.innerHTML = `0${seconds}`
     tens = 0
-    displayTens.innerHTML = `0${tens}`
   }
 
-  if (Number(seconds) > 9) {
-    displaySeconds.innerHTML = seconds
-  }
+  displayTens.innerHTML = formatTens(tens)
+  displaySeconds.innerHTML = formatSeconds(seconds)
 }
