@@ -1,78 +1,131 @@
-console.log("YOOO")
-var firstName = 'Nazariy'
+'use strict'
+
+console.log('YOOO')
+
+// ── Constants ────────────────────────────────────────────────────────────────
+const TMDB_API_KEY   = '19f84e11932abbc79e6d83f82d6d1045'
+const TMDB_BASE_URL  = 'https://api.themoviedb.org/3'
+const TMDB_IMAGE_URL = 'https://image.tmdb.org/t/p/original'
+
 let apiUrl = 'http://localhost:3000'
-if (location.href.indexOf('netlify') != -1) {
+if (location.href.indexOf('netlify') !== -1) {
   apiUrl = 'https://netflix-cp.herokuapp.com'
 }
 
-// Called whe the page is loaded
-window.onload = () => {
-  getOriginals()
-  getTrendingNow()
-  getTopRated()
-  getWishList()
-  getGenres()
-  letVarExample()
+// ── Unified fetch wrapper ────────────────────────────────────────────────────
+// Replaces the copy-pasted `.then(r => { if (r.ok) return r.json(); else throw })`
+// that was scattered across getMovieTrailer, fetchMovies, fetchMoviesBasedOnGenre,
+// getWishList, and getGenres.
+function fetchJSON(url, options = {}) {
+  return fetch(url, options).then(response => {
+    if (response.ok) {
+      return response.json()
+    }
+    throw new Error(`Request failed with status ${response.status}`)
+  })
 }
 
+// ── Unified movie card renderer ──────────────────────────────────────────────
+// showMovies() and showMoviesBasedOnGenre() used to contain near-identical loops
+// that created an <img>, set data-id, built the TMDB image URL, attached a click
+// handler, and appended it to a container. Both now delegate to this function.
+function renderMovieCard(movie, pathType, container) {
+  const imageElement = document.createElement('img')
+  imageElement.setAttribute('data-id', movie.id)
+  imageElement.src = `${TMDB_IMAGE_URL}${movie[pathType]}`
+  imageElement.addEventListener('click', handleMovieSelection)
+  container.appendChild(imageElement)
+}
+
+// ── Unified fetch-and-display helper ─────────────────────────────────────────
+// getOriginals(), getTrendingNow(), and getTopRated() were three separate
+// functions that differed only in URL + DOM selector + path type. They all
+// collapsed into calls to this single configurable helper.
+function fetchAndShowMovies(url, selector, pathType) {
+  fetchJSON(url)
+    .then(data => {
+      showMovies(data, selector, pathType)
+    })
+    .catch(error => {
+      console.log(error)
+    })
+}
+
+// ── Modal helpers (pure DOM — replaces $('#trailerModal').modal('show')) ────
+function showTrailerModal() {
+  const modal = document.getElementById('trailerModal')
+  modal.style.display = 'block'
+  modal.classList.add('show')
+  document.body.classList.add('modal-open')
+  const backdrop = document.createElement('div')
+  backdrop.className = 'modal-backdrop fade show'
+  document.body.appendChild(backdrop)
+}
+
+function hideTrailerModal() {
+  const modal = document.getElementById('trailerModal')
+  modal.style.display = 'none'
+  modal.classList.remove('show')
+  document.body.classList.remove('modal-open')
+  document.querySelectorAll('.modal-backdrop').forEach(el => el.remove())
+}
+
+// ── Page bootstrap ───────────────────────────────────────────────────────────
+window.onload = () => {
+  // Wire up the modal close button (previously handled by Bootstrap's jQuery
+  // data-dismiss plugin; now done natively so jQuery is no longer required).
+  const closeBtn = document.querySelector('#trailerModal [data-dismiss="modal"]')
+  if (closeBtn) {
+    closeBtn.addEventListener('click', hideTrailerModal)
+  }
+
+  // Netflix originals / Trending / Top Rated — same pattern, different params.
+  const homeSections = [
+    {
+      url:      `${TMDB_BASE_URL}/discover/tv?api_key=${TMDB_API_KEY}&with_networks=213`,
+      selector: '.original__movies',
+      pathType: 'poster_path',
+    },
+    {
+      url:      `${TMDB_BASE_URL}/trending/movie/week?api_key=${TMDB_API_KEY}`,
+      selector: '#trending',
+      pathType: 'backdrop_path',
+    },
+    {
+      url:      `${TMDB_BASE_URL}/movie/top_rated?api_key=${TMDB_API_KEY}&language=en-US&page=1`,
+      selector: '#top_rated',
+      pathType: 'backdrop_path',
+    },
+  ]
+
+  homeSections.forEach(({ url, selector, pathType }) => {
+    fetchAndShowMovies(url, selector, pathType)
+  })
+
+  getWishList()
+  getGenres()
+}
+
+// ── Wishlist ─────────────────────────────────────────────────────────────────
 function getWishList() {
-  fetch(`${apiUrl}/wishlist`, {
+  fetchJSON(`${apiUrl}/wishlist`, {
     headers: {
       Authorization: `${localStorage.getItem('token')}`,
     },
   })
-    .then(response => {
-      if (response.ok) {
-        return response.json()
-      } else {
-        throw new Error('something went wrong')
-      }
-    })
     .then(data => {
       showMovies(data, '#wishlist', 'backdrop_path')
     })
-    .catch(error_data => {
+    .catch(error => {
       logOut()
-      console.log(error_data)
+      console.log(error)
     })
 }
 
-function letVarExample(firstName = 'Nazariy') {
-  // Melissas Address
-  const address = {
-    street: '9879 Test rd.',
-    city: 'Brooklyn',
-    state: 'NY',
-  }
-
-  // address.state = "MI";
-
-  // let state = address.state;
-  // state = "MI"
-  // console.log(address);
-
-  // let address2 = address;
-  // address2.state = "MI";
-
-  // let address2 = {
-  //     ...address,
-  //     apartment: "MI"
-  // }
-
-  // let { street, city, state } = address;
-
-  // console.log(street + city + state);
-}
-
-async function getMovieTrailer(id) {
-  var url = `https://api.themoviedb.org/3/movie/${id}/videos?api_key=19f84e11932abbc79e6d83f82d6d1045&language=en-US`
-  return await fetch(url).then(response => {
-    if (response.ok) {
-      return response.json()
-    } else {
-      throw new Error('something went wrong')
-    }
-  })
+// ── Trailer ──────────────────────────────────────────────────────────────────
+function getMovieTrailer(id) {
+  const url = `${TMDB_BASE_URL}/movie/${id}/videos?api_key=${TMDB_API_KEY}&language=en-US`
+  return fetchJSON(url)
 }
 
 const setTrailer = trailers => {
@@ -90,158 +143,73 @@ const setTrailer = trailers => {
 
 const handleMovieSelection = e => {
   const id = e.target.getAttribute('data-id')
-  const iframe = document.getElementById('movieTrailer')
-  // here we need the id of the movie
   getMovieTrailer(id).then(data => {
-    const results = data.results
-    const youtubeTrailers = results.filter(result => {
-      if (result.site == 'YouTube' && result.type == 'Trailer') {
-        return true
-      } else {
-        return false
-      }
-    })
+    const youtubeTrailers = data.results.filter(
+      result => result.site === 'YouTube' && result.type === 'Trailer'
+    )
     setTrailer(youtubeTrailers)
   })
 
-  // open modal
-  $('#trailerModal').modal('show')
-  // we need to call the api with the ID
+  // Open modal — native DOM, no jQuery.
+  showTrailerModal()
 }
 
-showMovies = (movies, element_selector, path_type) => {
-  var moviesEl = document.querySelector(element_selector)
-  for (var movie of movies.results) {
-    var imageElement = document.createElement('img')
-    imageElement.setAttribute('data-id', movie.id)
-
-    imageElement.src = `https://image.tmdb.org/t/p/original${movie[path_type]}`
-
-    imageElement.addEventListener('click', e => {
-      handleMovieSelection(e)
-    })
-    moviesEl.appendChild(imageElement)
+// ── Movie list renderers (both delegate to renderMovieCard) ─────────────────
+function showMovies(movies, elementSelector, pathType) {
+  const moviesEl = document.querySelector(elementSelector)
+  if (!moviesEl) return
+  for (const movie of movies.results) {
+    renderMovieCard(movie, pathType, moviesEl)
   }
 }
 
-function fetchMoviesBasedOnGenre(genreId) {
-  var url = 'https://api.themoviedb.org/3/discover/movie?'
-  url +=
-    'api_key=19f84e11932abbc79e6d83f82d6d1045&language=en-US&sort_by=popularity.desc&include_adult=false&include_video=false&page=1'
-  url += `&with_genres=${genreId}`
-  return fetch(url).then(response => {
-    if (response.ok) {
-      return response.json()
-    } else {
-      throw new Error('something went wrong')
-    }
-  }) // returns a promise already
-}
-
-function fetchMovies(url, element_selector, path_type) {
-  fetch(url)
-    .then(response => {
-      if (response.ok) {
-        return response.json()
-      } else {
-        throw new Error('something went wrong')
-      }
-    })
-    .then(data => {
-      showMovies(data, element_selector, path_type)
-    })
-    .catch(error_data => {
-      console.log(error_data)
-    })
-}
-
-function showMoviesGenres(genres) {
-  genres.genres.forEach(function (genre) {
-    // get list of movies
-    var movies = fetchMoviesBasedOnGenre(genre.id)
-    movies
-      .then(function (movies) {
-        showMoviesBasedOnGenre(genre.name, movies)
-      })
-      .catch(function (error) {
-        console.log('BAD BAD', error)
-      })
-    // show movies based on genre
-  })
-}
-
 function showMoviesBasedOnGenre(genreName, movies) {
-  let allMovies = document.querySelector('.movies')
-  let genreEl = document.createElement('div')
+  const allMovies = document.querySelector('.movies')
+
+  const genreEl = document.createElement('div')
   genreEl.classList.add('movies__header')
-  genreEl.innerHTML = `
-        <h2>${genreName}</h2>
-    `
-  let moviesEl = document.createElement('div')
+  genreEl.innerHTML = `<h2>${genreName}</h2>`
+
+  const moviesEl = document.createElement('div')
   moviesEl.classList.add('movies__container')
   moviesEl.setAttribute('id', genreName)
 
-  for (var movie of movies.results) {
-    var imageElement = document.createElement('img')
-    let { backdrop_path, id } = movie
-    console.log('TESTING DESCONSTRUCT:', id, backdrop_path)
-    imageElement.setAttribute('data-id', id)
-
-    imageElement.src = `https://image.tmdb.org/t/p/original${backdrop_path}`
-
-    imageElement.addEventListener('click', e => {
-      handleMovieSelection(e)
-    })
-    moviesEl.appendChild(imageElement)
+  for (const movie of movies.results) {
+    renderMovieCard(movie, 'backdrop_path', moviesEl)
   }
 
   allMovies.appendChild(genreEl)
   allMovies.appendChild(moviesEl)
 }
 
+// ── Genres ───────────────────────────────────────────────────────────────────
+function fetchMoviesBasedOnGenre(genreId) {
+  const url =
+    `${TMDB_BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}` +
+    '&language=en-US&sort_by=popularity.desc&include_adult=false&include_video=false&page=1' +
+    `&with_genres=${genreId}`
+  return fetchJSON(url)
+}
+
+function showMoviesGenres(genres) {
+  genres.genres.forEach(genre => {
+    fetchMoviesBasedOnGenre(genre.id)
+      .then(movies => {
+        showMoviesBasedOnGenre(genre.name, movies)
+      })
+      .catch(error => {
+        console.log('BAD BAD', error)
+      })
+  })
+}
+
 function getGenres() {
-  var url =
-    'https://api.themoviedb.org/3/genre/movie/list?api_key=19f84e11932abbc79e6d83f82d6d1045&language=en-US'
-  fetch(url)
-    .then(response => {
-      if (response.ok) {
-        return response.json()
-      } else {
-        throw new Error('something went wrong')
-      }
-    })
+  const url = `${TMDB_BASE_URL}/genre/movie/list?api_key=${TMDB_API_KEY}&language=en-US`
+  fetchJSON(url)
     .then(data => {
       showMoviesGenres(data)
     })
-    .catch(error_data => {
-      console.log(error_data)
+    .catch(error => {
+      console.log(error)
     })
 }
-
-function getOriginals() {
-  var url =
-    'https://api.themoviedb.org/3/discover/tv?api_key=19f84e11932abbc79e6d83f82d6d1045&with_networks=213'
-  fetchMovies(url, '.original__movies', 'poster_path')
-}
-
-function getTrendingNow() {
-  var url =
-    'https://api.themoviedb.org/3/trending/movie/week?api_key=19f84e11932abbc79e6d83f82d6d1045'
-  fetchMovies(url, '#trending', 'backdrop_path')
-}
-
-function getTopRated() {
-  var url =
-    'https://api.themoviedb.org/3/movie/top_rated?api_key=19f84e11932abbc79e6d83f82d6d1045&language=en-US&page=1'
-  fetchMovies(url, '#top_rated', 'backdrop_path')
-}
-
-// Loop through list of genres
-//     Show genres in HTML
-//     Fetch movies based on genre fetchMovies(url, genre, classInHTML)
-//     Display the list of movies
-
-// https://api.themoviedb.org/3/discover/movie?api_key=19f84e11932abbc79e6d83f82d6d1045&language=en-US&sort_by=popularity.desc&include_adult=false&include_video=false&page=1&with_genres=28
-
-// Movies genres
-// https://api.themoviedb.org/3/genre/movie/list?api_key=19f84e11932abbc79e6d83f82d6d1045&language=en-US
