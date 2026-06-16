@@ -21,30 +21,27 @@ buttonReset.onclick = () => {
   clearInterval(interval)
   tens = 0
   seconds = 0
-  displayTens.innerHTML = `0${tens}`
-  displaySeconds.innerHTML = `0${seconds}`
+  displayTens.innerHTML = '00'
+  displaySeconds.innerHTML = '00'
 }
 
 const timer = () => {
   tens++
 
-  if (Number(tens) <= 9) {
-    displayTens.innerHTML = `0${tens}`
-  }
-
-  if (Number(tens) > 9) {
-    displayTens.innerHTML = tens
-  }
-
-  if (Number(tens) > 99) {
-    console.log('seconds')
+  // when tens reaches 100, increment seconds and reset tens
+  if (tens > 99) {
     seconds++
-    displaySeconds.innerHTML = `0${seconds}`
     tens = 0
-    displayTens.innerHTML = `0${tens}`
   }
 
-  if (Number(seconds) > 9) {
-    displaySeconds.innerHTML = seconds
+  // cap seconds at 99 to prevent infinite growth
+  if (seconds > 99) {
+    seconds = 99
+    tens = 99
+    clearInterval(interval)
   }
+
+  // format display with proper zero-padding
+  displayTens.innerHTML = tens.toString().padStart(2, '0')
+  displaySeconds.innerHTML = seconds.toString().padStart(2, '0')
 }

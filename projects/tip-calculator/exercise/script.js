@@ -36,6 +36,17 @@ const calculateBill = () => {
   // get the tip from user & convert it into a percentage (divide by 100)
   const tipPercentage = Number(tipInput.value) / 100
 
+  // validate inputs — guard against NaN or invalid values
+  if (isNaN(bill) || bill < 0 || billInput.value.trim() === '') {
+    perPersonTotalDiv.innerText = 'Please enter a valid bill amount'
+    return
+  }
+
+  if (isNaN(tipPercentage) || tipPercentage < 0 || tipInput.value.trim() === '') {
+    perPersonTotalDiv.innerText = 'Please enter a valid tip percentage'
+    return
+  }
+
   // get the total tip amount
   const tipAmount = bill * tipPercentage
 
@@ -67,10 +78,9 @@ const decreasePeople = () => {
   // if amount is 1 or less simply return
   // (a.k.a you can't decrease the number of people to 0 or negative!)
   if (numberOfPeople <= 1) {
-    throw 'Hey! You cannot have less than 1 person!'
-    return
+    throw new Error('Hey! You cannot have less than 1 person!')
   }
-  
+
   // decrement the amount of people
   numberOfPeople -= 1
 

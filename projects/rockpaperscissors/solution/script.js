@@ -19,13 +19,16 @@ function getComputerChoice() {
   return computerChoice
 }
 
+// Track score independently from DOM
+let playerScoreValue = 0
+
 // ** getResult compares playerChoice & computerChoice and returns the score accordingly **
 // human wins - getResult('Rock', 'Scissors') 👉 1
 // human loses - getResult('Scissors', 'Rock') 👉 -1
 // human draws - getResult('Rock', 'Rock') 👉 0
 function getResult(playerChoice, computerChoice) {
   // return the result of score based on if you won, drew, or lost
-  
+
   let score;
 
   // All situations where human draws, set `score` to 0
@@ -57,7 +60,7 @@ function showResult(score, playerChoice, computerChoice) {
   // Hint: on a score of -1
   // You should do result.innerText = 'You Lose!'
   // Don't forget to grab the div with the 'result' id!
-  
+
   let result = document.getElementById('result')
   switch (score) {
     case -1:
@@ -73,8 +76,11 @@ function showResult(score, playerChoice, computerChoice) {
 
   let playerScore = document.getElementById('player-score')
   let hands = document.getElementById('hands')
-  playerScore.innerText = `${Number(playerScore.innerText) + score}`
-    hands.innerText = `👱 ${playerChoice} vs 🤖 ${computerChoice}`
+
+  // Update score using independent variable, prevent negative scores
+  playerScoreValue = Math.max(0, playerScoreValue + score)
+  playerScore.innerText = playerScoreValue
+  hands.innerText = `👱 ${playerChoice} vs 🤖 ${computerChoice}`
 }
 
 // ** Calculate who won and show it on the screen **
@@ -90,7 +96,7 @@ function playGame() {
   let rpsButtons = document.querySelectorAll('.rpsButton')
 
   // * Adds an on click event listener to each RPS button and every time you click it, it calls the onClickRPS function with the RPS button that was last clicked *
-  
+
   // 1. loop through the buttons using a forEach loop
   // 2. Add a 'click' event listener to each button
   // 3. Call the onClickRPS function every time someone clicks
@@ -110,9 +116,11 @@ function endGame() {
   let playerScore = document.getElementById('player-score')
   let hands = document.getElementById('hands')
   let result = document.getElementById('result')
-  playerScore.innerText = ''
-  hands.innerText = ''
-  result.innerText = ''
+
+  // Guard against missing DOM elements
+  if (playerScore) playerScore.innerText = ''
+  if (hands) hands.innerText = ''
+  if (result) result.innerText = ''
 }
 
 playGame()
