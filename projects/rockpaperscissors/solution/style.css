@@ -36,3 +36,50 @@ button {
   margin-top: 20px;
 }
 
+#stats {
+  font-size: 1.2rem;
+  margin-top: 10px;
+}
+
+#win-rate {
+  font-size: 1.2rem;
+  margin-top: 6px;
+  color: #ffd700;
+}
+
+#resetStatsButton {
+  font-size: 1rem;
+  margin-top: 10px;
+  height: auto;
+  width: auto;
+  padding: 8px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+#history-panel {
+  margin-top: 20px;
+  font-size: 1rem;
+  max-height: 300px;
+  overflow-y: auto;
+  width: 80%;
+  max-width: 500px;
+  text-align: left;
+}
+
+.history-entry {
+  padding: 6px 10px;
+  border-bottom: 1px solid #333;
+}
+
+.history-entry.win {
+  color: #4caf50;
+}
+
+.history-entry.lose {
+  color: #f44336;
+}
+
+.history-entry.draw {
+  color: #bbb;
+}
